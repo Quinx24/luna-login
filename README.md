@@ -124,3 +124,20 @@ Có thể host cả frontend/backend trên Render: build `npm ci && npm run buil
 - https://support.google.com/firebase/answer/6400741
 - https://render.com/docs/deploy-node-express-app
 - https://vercel.com/docs/routing/rewrites
+
+## Deploy toàn bộ trên Vercel (API tích hợp)
+
+Dự án hiện có api/token.js dùng lại server/app.js, chạy dưới dạng Vercel Node Function. vercel.json cấu hình frontend Vite và API cùng domain. Với cách này KHÔNG cần Render hoặc rewrite /api sang backend khác. Xóa rewrite cũ chuyển /api sang Render nếu đã thêm khi sử dụng phương án này.
+
+1. Đẩy các file api/token.js, vercel.json và source hiện tại lên repository mà Vercel đang theo dõi.
+2. Vercel → Project → Settings → Environment Variables → Production: giữ các VITE_FIREBASE_* đã cấu hình.
+3. Thêm các biến SERVER (không có tiền tố VITE_):
+   - FIREBASE_PROJECT_ID: luna-c3837
+   - FIREBASE_SERVICE_ACCOUNT_JSON: toàn bộ nội dung file service-account JSON hợp lệ, nên nén thành một dòng. Dán trực tiếp vào ô Value trên Vercel, không thêm cặp dấu nháy bên ngoài. Đánh dấu Sensitive nếu có tùy chọn. Không commit file hoặc gửi private key vào chat.
+   - LIVEKIT_URL: WebSocket URL dạng wss:// của project LiveKit đang dùng.
+   - LIVEKIT_API_KEY và LIVEKIT_API_SECRET: cùng cặp khóa của project LiveKit.
+4. Không dùng GOOGLE_APPLICATION_CREDENTIALS trỏ tới đường dẫn C:/... trên Vercel: file đó chỉ tồn tại trên máy local. Dùng FIREBASE_SERVICE_ACCOUNT_JSON ở bước trên.
+5. Redeploy sau khi source mới và biến đã lưu. Không cần chạy npm start trên Vercel; nền tảng gọi api/token.js trực tiếp.
+6. Kiểm tra POST /api/token không có Authorization phải trả 401 dạng JSON. Nếu 404 hoặc HTML thì function chưa được deploy/routing chưa đúng. Nếu 503, xem thông báo cấu hình Firebase Admin hoặc LiveKit. Vào phòng bằng tài khoản thật để xác nhận thành công, rồi thử hai thiết bị.
+
+Rate limit hiện lưu trong bộ nhớ từng instance, không phải hạn mức dùng chung toàn bộ Vercel. Với nhu cầu production lớn, bổ sung store dùng chung hoặc WAF/rate limiting của hosting.
