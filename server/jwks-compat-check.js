@@ -1,0 +1,11 @@
+import { createRequire } from 'node:module';
+import { generateKeyPairSync } from 'node:crypto';
+const require = createRequire(import.meta.url);
+const firebaseRequire = createRequire(require.resolve('firebase-admin/app'));
+const jwksPath = firebaseRequire.resolve('jwks-rsa');
+const jwksRequire = createRequire(jwksPath);
+const { retrieveSigningKeys } = jwksRequire('./utils');
+const { publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+const keys = await retrieveSigningKeys([{ ...publicKey.export({format:'jwk'}), kid:'compat-test', alg:'RS256' }]);
+if(keys.length !== 1 || !keys[0].getPublicKey().includes('BEGIN PUBLIC KEY')) throw new Error('JWKS compatibility failed');
+console.log('CommonJS JWKS key loading: OK');
